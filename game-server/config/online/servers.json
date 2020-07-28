@@ -1,0 +1,23 @@
+{
+  "db": [
+    {"id": "db-server-1", "host": "serverip", "port": 6050}
+  ],
+  "redis": [
+    {"id": "redis-server-1", "host": "serverip", "port": 6051}
+  ],
+  "lobby": [
+    {"id": "lobby-server-1", "host": "serverip", "port": 6052}
+  ],
+  "room": [
+    {"id": "room-server-1", "host": "serverip", "port": 6053}
+  ],
+  "game": [
+    {"id": "game-server-1", "host": "serverip", "port": 6054}
+  ],
+  "connector": [
+    {"id": "connector-server-1", "host": "serverip", "port": 4050, "clientPort": 3050, "frontend": true,"serverName":"华山论剑"}
+  ],
+  "gate": [
+    {"id": "gate-server-1", "host": "serverip", "clientPort": 3014, "frontend": true}
+  ]
+}

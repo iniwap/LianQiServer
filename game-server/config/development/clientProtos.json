@@ -1,0 +1,63 @@
+{
+	"connector.entryHandler.reqLogin":{
+		"required uInt32 userID" : 1,
+		"required uInt32 loginType" : 2,
+		"required uInt32 area" : 3,
+		"optional string password" : 4,
+		"required string deviceID" : 5,
+		"optional uInt32 osVersion" : 6,
+		"required uInt32 ipAddr" : 7,
+		"required uInt32 channelID" : 8,
+		"required uInt32 appVersion" : 9,
+		"optional uInt32 netWorkType" : 10,
+		"optional string openID" : 11,
+		"optional string token" : 12,
+		"optional string nickName" : 13,
+		"optional string head" : 14,
+		"optional uInt32 sex" : 15,
+		"optional uInt32 expireTime" : 16
+	},
+	"lobby.lobbyHandler.reqRankList":{
+		"required uInt32 game" : 1,
+		"required uInt32 scope" : 2,
+		"required uInt32 type" : 3,
+		"required uInt32 area" : 4,
+		"required uInt32 rankNum" : 5
+	},
+	"room.roomHandler.reqJoinRoom":{
+		"required uInt32 game" : 1,
+		"required uInt32 roomId" : 2,
+		"required uInt32 plazaID" : 3,
+		"required string pwd" : 4,
+		"required uInt32 playerNum" : 5,
+		"required uInt32 gridLevel" : 6
+	},
+	"room.roomHandler.reqCreateRoom":{
+		"required uInt32 roomType" : 1,
+		"required uInt32 baseScore" : 2,
+		"required uInt32 minScore" : 3,
+		"required uInt32 maxScore" : 4,
+		"required uInt32 game" : 5,
+		"required string roomName" : 6,
+		"required string roomPassword" : 7,
+		"required string rule" : 8
+	},
+	"room.roomHandler.playerAct":{
+		"required uInt32 act" : 1,
+		"required uInt32 seat" : 2
+	},
+	"room.roomHandler.playerTalkMsg":{
+		"required uInt32 seat" : 1,
+		"required string content" : 2
+	},
+	"room.roomHandler.reqRoomList":{
+		"required uInt32 game" : 1,
+		"required uInt32 areaID" : 2,
+		"required uInt32 begin" : 3,
+		"required uInt32 reqCnt" : 4
+	},
+	"room.roomHandler.reportTalentList":{
+		"required uInt32 seat" : 1,
+		"required string talentList" : 2
+	}
+}

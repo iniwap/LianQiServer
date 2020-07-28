@@ -1,0 +1,6 @@
+{
+  "room": [
+    {"id":1,"time": "10 * * * * *", "action": "roomCron.test"},
+    {"id":2, "serverId":"room-server-1","time": "* 5 * * * *", "action": "roomCron.checkIfRoomTimeOut"}
+  ]
+}

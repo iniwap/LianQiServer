@@ -1,0 +1,342 @@
+{
+  	"message Chess" : {
+		"optional int32 health" : 1,
+		"optional int32 attack" : 2,
+		"optional int32 support" : 3,
+		"optional int32 absorb" : 4,
+		"optional int32 direction" : 5,
+		"optional uInt32 playerID" : 6,
+		"optional int32 x" : 7,
+		"optional int32 y" : 8,
+		"repeated Skill skillList" : 9,
+	    "message Skill" : {
+	        "optional int32 healthChange" : 1,
+	        "optional int32 attackChange" : 2,
+	        "optional int32 absorbChange" : 3,
+	        "optional int32 applyPosX" : 4,
+	        "optional int32 applyPosY" : 5,
+	        "optional int32 applyPosZ" : 6,
+	        "optional int32 basePosX" : 7,
+	        "optional int32 basePosY" : 8,
+	        "optional int32 basePosZ" : 9,
+	        "optional string type" : 10
+	  	},
+		"repeated Buff buffList" : 10,
+	    "message Buff" : {
+	        "optional int32 healthChange" : 1,
+	        "optional int32 attackChange" : 2,
+	        "optional int32 absorbChange" : 3,
+	        "optional string type" : 4
+	  	}
+	},
+	"connector.entryHandler.reqLogin":{
+		"required int32 flag" : 1,
+		"required uInt32 user_id" : 2,
+		"required uInt32 area" : 3,
+		"required string name" : 4,
+		"required uInt32 sex" : 5,
+		"required string head" : 6,
+		"optional uInt32 vip" : 7,
+		"required uInt32 gold" : 8,
+		"required uInt32 win" : 9,
+		"optional double win_rate" :10,
+		"required uInt32 lose" : 11,
+		"required uInt32 draw" : 12,
+		"optional uInt32 escape" : 13,
+		"optional uInt32 talent" : 14,
+		"optional uInt32 game_time" : 15,
+		"optional uInt32 exp" : 16,
+		"optional uInt32 phone" : 17,
+		"required uInt32 room_id" : 18,
+		"optional uInt32 adult" : 19,
+		"optional uInt32 charm" : 20,
+		"required uInt32 score" : 21,
+		"required uInt32 diamond" : 22,
+		"optional uInt32 energy" : 23
+	},
+	"lobby.lobbyHandler.reqPlazaList":{
+      "repeated Plaza plazaList" : 1,
+      "message Plaza" : {
+      	"required uInt32 plazaid" : 1,
+        "required uInt32 room_type" : 2,
+        "required double star" : 3,
+        "required uInt32 lmt_type" : 4,
+        "required string rule" : 5,
+        "required string name" : 6,
+        "required string des" : 7,
+        "repeated PlazaLevel levelList" : 8,
+        "message PlazaLevel" : {
+	        "required uInt32 base_score" : 1,
+	        "required uInt32 minsr" : 2,
+	        "required uInt32 maxsr" : 3,
+	        "required uInt32 levelid" : 4
+      	}
+      }
+	},
+	"lobby.lobbyHandler.reqPropList":{
+      "repeated Prop propList" : 1,
+      "message Prop" : {
+        "required uInt32 type" : 1,
+        "required uInt32 id" : 2,
+        "required uInt32 price" : 3,
+        "required string name" : 4,
+        "required string pic" : 5,
+        "required string des" : 6,
+        "required string data" : 7
+      }
+	},
+	"lobby.lobbyHandler.reqPackageList":{
+      "repeated Package packageList" : 1,
+      "message Package" : {
+        "required uInt32 prop_id" : 1,
+        "required uInt32 prop_cnt" : 2,
+        "required uInt32 end_time" : 3
+      }
+	},
+	"lobby.lobbyHandler.reqSysMsgList":{
+      "repeated SysAndPrivateMsg sysMsgList" : 1,
+      "message SysAndPrivateMsg" : {
+        "required uInt32 type" : 1,
+        "required uInt32 id" : 2,
+        "required string content" : 3
+      }
+	},
+	"lobby.lobbyHandler.reqPrivateMsgList":{
+      "repeated SysAndPrivateMsg privateMsgList" : 1,
+      "message SysAndPrivateMsg" : {
+        "required uInt32 type" : 1,
+        "required uInt32 id" : 2,
+        "required uInt32 has_read" : 3,
+        "required string title" : 4,
+        "required string content" : 5,
+        "optional string author" : 6,
+        "required string send_time" : 7,
+        "optional string end_time" : 8
+      }
+	},
+	"lobby.lobbyHandler.reqRankList":{
+      "required uInt32 type" : 1,
+      "required uInt32 scope" : 2,
+      "repeated Rank rankList" : 3,
+      "message Rank" : {
+        "required uInt32 userID" : 1,
+        "required string name" : 2,
+        "required string headUrl" : 3,
+        "required uInt32 exp" : 4,
+        "required uInt32 score" : 5,
+        "required uInt32 charm" : 6,
+        "required uInt32 diamond" : 7,
+        "required uInt32 gold" : 8,
+        "required float win_rate" : 9
+      }
+	},
+	"lobby.lobbyHandler.reqStoreList":{
+      "repeated Product storeList" : 1,
+      "message Product" : {
+        "required uInt32 id" : 1,
+        "required string point" : 2,
+        "required uInt32 price" : 3,
+        "required string name" : 4,
+        "required string des" : 5,
+        "required string pic" : 6,
+        "required string data" : 7
+      }
+	},
+	"lobby.lobbyHandler.reqFriendList":{
+      "repeated Friend friendList" : 1,
+      "message Friend" : {
+        "required uInt32 friend_id" : 1,
+        "required string name" : 2,
+        "required string head_url" : 3,
+        "required string lastlogin_time" : 4,
+        "required string des" : 5,
+        "required uInt32 friend_score" : 6
+      }
+	},
+	"lobby.lobbyHandler.reqSignInLuckDrawData":{
+      "required uInt32 hasDrawed" : 1,
+      "required uInt32 hasSigned" : 2,
+      "required uInt32 signInDay" : 3,
+      "repeated SignIn luckData" : 4,
+      "message SignIn" : {
+        "required uInt32 type" : 1,
+        "required uInt32 day" : 2,
+        "required uInt32 prop_id" : 3,
+        "required uInt32 gold_num" : 4
+      },
+      "repeated LuckDraw luckData" : 5,
+      "message LuckDraw" : {
+        "required uInt32 type" : 1,
+        "required uInt32 prop_id" : 2,
+        "required uInt32 gold_num" : 3
+      }
+	},
+	"lobby.lobbyHandler.reqSignIn":{
+	    "required int32 flag" : 1,
+	    "optional uInt32 type" : 2,
+	    "optional uInt32 prop_id" : 3,
+	    "optional uInt32 gold_num" : 4
+	},
+	"lobby.lobbyHandler.reqLuckDraw":{
+	    "required int32 flag" : 1,
+	    "optional uInt32 type" : 2,
+	    "optional uInt32 prop_id" : 3,
+	    "optional uInt32 gold_num" : 4
+	},
+	"lobby.lobbyHandler.awardEmail":{
+        "required uInt32 type" : 1,
+        "required uInt32 id" : 2,
+        "required uInt32 has_read" : 3,
+        "required string title" : 4,
+        "required string content" : 5,
+        "optional string author" : 6,
+        "required string send_time" : 7,
+        "optional string end_time" : 8,
+        "required uInt32 needAdd2Email" : 9
+	},
+	"room.roomHandler.reqJoinRoom":{
+	    "required int32 flag" : 1,
+	    "optional uInt32 roomId" : 2,
+	    "optional uInt32 owner" : 3,
+	    "optional uInt32 levelId" : 4,
+	    "optional string rule" : 5,
+	    "optional uInt32 isRelink" : 6,
+	    "required uInt32 plazaid" : 7,
+	    "required uInt32 roomType" : 8,
+	    "required uInt32 baseScore" : 9
+	},
+	"room.roomHandler.reqCreateRoom":{
+	    "required int32 flag" : 1,
+	    "optional uInt32 roomId" : 2,
+	    "optional string roomName" : 3,
+	    "optional string roomPassword" : 4,
+	    "optional string rule" : 5
+	},
+	"room.roomHandler.reqLeaveRoom":{
+	    "required uInt32 type" : 1,
+	    "required uInt32 leaveResult" : 2,
+	    "required string msg" : 3
+	},
+	"room.roomHandler.playerInfo":{
+		"required uInt32 userID" : 1,
+		"required string name" : 2,
+		"required uInt32 sex" : 3,
+		"required string headUrl" : 4,
+		"required uInt32 vip" : 5,
+		"required uInt32 gold" : 6,
+		"required uInt32 win" : 7,
+		"required uInt32 lose" : 8,
+		"required uInt32 draw" : 9,
+		"required uInt32 escape" : 10,
+		"required uInt32 talent" : 11,
+		"required uInt32 exp" : 12,
+		"required uInt32 score" : 13,
+		"required uInt32 charm" : 14,
+		"required uInt32 seat" : 15
+	},
+	"room.roomHandler.playerState":{
+		"required uInt32 userID" : 1,
+		"required uInt32 state" : 2,
+		"required uInt32 seat" : 3
+	},
+	"room.roomHandler.playerTalkMsg":{
+		"required int32 flag" : 1,
+		"optional uInt32 seat" : 2,
+		"optional string content" : 3
+	},
+	"room.roomHandler.talentList":{
+		"required uInt32 seat" : 1,
+		"required string talentList" : 2
+	},
+	"room.roomHandler.reportTalentList":{
+		"required uInt32 seat" : 1,
+		"required string talentList" : 2
+	},
+	"room.roomHandler.reqRoomList":{
+      "repeated Room roomList" : 1,
+      "message Room" : {
+        "required uInt32 roomId" : 1,
+        "required uInt32 isFull" : 2,
+        "required string roomName" : 3,
+        "required string roomDes" : 4,
+        "required uInt32 roomPersonCnt" : 5,
+        "required string roomPwd" : 6,
+        "required string rule" : 7
+      }
+	},
+	"room.roomHandler.roomStateChange":{
+		"required uInt32 type" : 1,
+        "required uInt32 roomId" : 2,
+        "optional uInt32 personCnt" : 3,
+        "optional string roomName" : 4,
+        "optional string roomPassword" : 5,
+        "optional string rule" : 6
+	},
+	"room.roomHandler.playerLeave":{
+		"required uInt32 type" : 1,
+		"required uInt32 seat" : 2,
+		"required uInt32 userID" : 3
+	},
+	"room.roomHandler.clock":{
+		"required uInt32 seat" : 1,
+        "required uInt32 leftTime" : 2,
+        "optional uInt32 step" : 3
+	},
+	"game.lianQiHandler.lianQITurn":{
+		"required uInt32 seat" : 1,
+        "required uInt32 round" : 2,
+        "optional uInt32 isPassTurn" : 3,
+        "optional uInt32 isTimeOut" : 4,
+        "repeated int32 lmt" : 5
+	},
+	"game.lianQiHandler.lianQI":{
+		"required uInt32 turn" : 1,
+      	"repeated Chess checkerBoard" : 2
+	},
+	"game.lianQiHandler.reqPlay":{
+		"required int32 flag" : 1,
+		"optional uInt32 seat" : 2,
+		"optional int32 x" : 3,
+		"optional int32 y" : 4,
+		"optional int32 direction" : 5,
+      	"repeated Chess checkerBoard" : 6
+	},
+	"game.lianQiHandler.lianQiPlay":{
+		"required int32 flag" : 1,
+		"optional uInt32 seat" : 2,
+		"optional int32 x" : 3,
+		"optional int32 y" : 4,
+		"optional int32 direction" : 5,
+      	"repeated Chess checkerBoard" : 6
+	},
+	"game.lianQiHandler.reqMove":{
+		"required int32 flag" : 1,
+		"optional uInt32 seat" : 2,
+		"optional int32 x" : 3,
+		"optional int32 y" : 4,
+		"optional int32 direction" : 5,
+      	"repeated Chess checkerBoard" : 6
+	},
+	"game.lianQiHandler.lianQiMove":{
+		"required int32 flag" : 1,
+		"optional int32 seat" : 2,
+		"optional int32 x" : 3,
+		"optional int32 y" : 4,
+		"optional int32 direction" : 5,
+      	"repeated Chess checkerBoard" : 6
+	},
+	"game.lianQiHandler.lianQiResult":{
+		"repeated GameResult result" : 1,
+	    "message GameResult" : {
+			"required uInt32 seat" : 1,
+			"required uInt32 area" : 2,
+			"required uInt32 kill" : 3,
+			"required int32 score" : 4,
+			"required uInt32 multi" : 5,
+			"required uInt32 hasAbandon" : 6
+	    },
+		"repeated uInt32 type" : 2,
+		"required uInt32 poolGold" : 3,
+      	"repeated Chess checkerBoard" : 4
+	}
+}

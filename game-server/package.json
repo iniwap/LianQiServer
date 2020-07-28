@@ -1,0 +1,12 @@
+{
+    "name":"lianqi",
+    "version":"0.0.1",
+    "private":false,
+    "dependencies":{
+        "pomelo": "2.2.x",
+    	"crc": "0.2.0",
+    	"pomelo-logger": "0.1.7",
+    	"underscore": "1.5.2"
+    }
+}
+
