@@ -157,7 +157,7 @@
       "required uInt32 hasDrawed" : 1,
       "required uInt32 hasSigned" : 2,
       "required uInt32 signInDay" : 3,
-      "repeated SignIn luckData" : 4,
+      "repeated SignIn signData" : 4,
       "message SignIn" : {
         "required uInt32 type" : 1,
         "required uInt32 day" : 2,
