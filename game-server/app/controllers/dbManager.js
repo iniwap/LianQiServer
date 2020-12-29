@@ -9,12 +9,12 @@ var exp = module.exports;
 
 var Schema = require('jugglingdb').Schema;
 var schema = new Schema('mysql', {  
-      host: 'localhost',  //serverip
+      host: 'localhost',  //116.62.57.248
       port: 3306,  
       database: 'lianqi', 
-      username:"username",
-      user:'user',
-      password: 'sqlpassword',  
+      username:"iafun",
+      user:'iafun',
+      password: 'Huqu*6110@',  
       debug: false,  
       pool: true,  
       connectionLimit: 100,
@@ -249,7 +249,7 @@ exp.getUserData = function (msg,cb) {
                 }else{
 
                     //这里判断是否每日赠送过积分
-                    
+                    checkEveryDayLoginAward(msg.userID,result.lastlogin_time);
 
                     User.update(msg.userID,{ lastlogin_time: UTILS.Date(0), 
                                     channelid:msg.channelID,
@@ -283,14 +283,7 @@ exp.getUserData = function (msg,cb) {
 
                     //每日登录 送多少积分，插入一条邮件信息
                     //这里需要判断今天是否已经送过积分
-                    var content = JSON.stringify({content:"每日登录游戏，就送100积分，祝您游戏愉快～！",
-                                                    hasAward:1,
-                                                    type:Number(DEF.LOBBY.eAwardType.GOLD),
-                                                    propId:0,
-                                                    awardCnt:Number(DEF.LOBBY.EVERYDAY_LOGIN_AWARD_GOLD),
-                                                    awardIcon:"",
-                                                    hasGottenAward:0});
-                    addUserEmail(msg.userID,0,"每日登录送积分",content,"世界联棋委员会",UTILS.Date(DEF.LOBBY.FOREVER_TIME));
+                    checkEveryDayLoginAward(msg.userID,result.lastlogin_time);
                 }
             });
         }
@@ -385,6 +378,8 @@ exp.getUserData = function (msg,cb) {
                             cb(DEF.LOBBY.eLoginResultFlag.LOGIN_SUCCESS,result);
 
                             //每日登陆送
+                            //这里判断是否每日赠送过积分
+                            checkEveryDayLoginAward(msg.userID,result.lastlogin_time);
                         }
                     });
                 }
@@ -657,6 +652,26 @@ exp.updateUserTalentslot = function(userID,slot,gold,diamond,cb){
 };
 
 //----------------------------内部接口--------------------------------------
+var checkEveryDayLoginAward = function(userID,lastlogin_time){
+
+    var time_now = UTILS.Date(0);
+    var time_lastlogin = new Date(lastlogin_time);
+
+    if(time_now.getFullYear() == time_lastlogin.getFullYear() 
+        && time_now.getMonth() == time_lastlogin.getMonth() 
+        && time_now.getDate() == time_lastlogin.getDate()){
+        return;
+    }
+    var content = JSON.stringify({content:"每日登录游戏，就送100积分，祝您游戏愉快～！",
+                                    hasAward:1,
+                                    type:Number(DEF.LOBBY.eAwardType.GOLD),
+                                    propId:0,
+                                    awardCnt:Number(DEF.LOBBY.EVERYDAY_LOGIN_AWARD_GOLD),
+                                    awardIcon:"",
+                                    hasGottenAward:0});
+    addUserEmail(userID,0,"每日登录送积分",content,"世界联棋委员会",UTILS.Date(DEF.LOBBY.FOREVER_TIME));
+}
+
 var addUserEmail = function(userID,type,title,content,author,endTime){
     UserEmail.create({user_id:userID,
         type:0,
