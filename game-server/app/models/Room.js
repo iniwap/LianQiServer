@@ -395,7 +395,6 @@ Room.prototype.onReportTalentList = function(data,cb){
   var strTalentList = data.talentList.split(",");
   player.talentList = strTalentList.map(function(data){return +data;});
 
-  console.error("onReportTalentList===================>"+player.talentList);
 
   //自己上报的响应
   cb({seat:player.seat,talentList:player.talentList});
@@ -411,7 +410,7 @@ Room.prototype.onReportTalentList = function(data,cb){
   //向其他玩家发送该玩家的天赋列表 - 
   for(var i in allPlayer) {
       //有用户才发
-      if(allPlayer[i].userID != userID && allPlayer[i].userID != 0){        
+      if(allPlayer[i].userID != data.userID && allPlayer[i].userID != 0){        
         this.sendMsgToUserID("room.roomHandler.talentList",allPlayer[i].userID,{seat:player.seat,talentList:player.talentList.join(",")});
       }
   }
