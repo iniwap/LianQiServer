@@ -229,10 +229,11 @@ Room.prototype.onPlayerEnter = function(userID,isRelink){
     console.log("用户重连进游戏，userID:%d",self.userID);
   }else{
 
-    if(this.ruleJson.autoStart && this.ruleJson.autoStart == 1){
-      //是否是自动准备设定 //也可以是客户端绝对是否自动准备，如果是自动上发act-准备
+    //自动准备没有用到，应该放到ruleJson.rule里配置为autoStart，目前客户端会自动触发或者会点击准备的
+    if(this.ruleJson.rule == "autoStart"){
+      //是否是自动准备设定 //也可以是客户端决定是否自动准备，如果是自动上发act-准备
       //如果是自动准备，则发送玩家状态
-      this.playerManager.updatePlayerState(user.id,DEF.ROOM.STATE_TYPE.STATE_TYPE_ROOMREADY);
+      this.playerManager.updatePlayerState(self.userID,DEF.ROOM.STATE_TYPE.STATE_TYPE_ROOMREADY);
 
       //通知所有玩家用户状态变化
       this.onPlayerStateChange(DEF.ROOM.STATE_TYPE.STATE_TYPE_ROOMREADY,self.userID,self.seat,true);
@@ -240,7 +241,19 @@ Room.prototype.onPlayerEnter = function(userID,isRelink){
       //如果全部已经准备，则自动开始
       if(this.playerManager.getAllPlayerReady()){
         //start game
-        this.startGame();
+        this.notifyClientStartGame();//此处应该先通知客户端开始游戏
+      }
+    }else if(this.ruleJson.rule == "default"){
+      //如果其他用户状态不是sitdown，那么就应该想当前这个用户发送其他用户状态
+      for(var i in allPlayer) {
+        //有用户才发
+        if(allPlayer[i].userID != self.userID && allPlayer[i].userID != 0){
+          if(allPlayer[i].playerState != DEF.ROOM.STATE_TYPE.STATE_TYPE_SITDOWN){
+            //向当前玩家发送该玩家状态
+            var stateInfo = {state:allPlayer[i].playerState,userID:allPlayer[i].userID,seat:allPlayer[i].seat};
+            this.sendMsgToUserID("room.roomHandler.playerState",self.userID,stateInfo);
+          }
+        }
       }
     }
   }
@@ -278,9 +291,9 @@ Room.prototype.onPlayerAct = function(act,seat,userID){
   if(this.playerManager.getAllPlayerReady() 
     && (this.roomType == DEF.ROOM.ROOM_TYPE.ROOM_PLAZA || this.roomType == DEF.ROOM.ROOM_TYPE.ROOM_CLASSIC_PLAZA)){
     //start game
-    this.startGame();
+    this.notifyClientStartGame();
   }else{
-    // 需要客户端通知开始
+    // 需要房主手动开启游戏
   }
 }
 
@@ -388,16 +401,15 @@ Room.prototype.onReportTalentList = function(data,cb){
   //记录该玩家的天赋配置列表，在游戏初始化的时候传过去，进行初始化游戏
   if(this.playerManager.getPlayerUserIDBySeat(data.seat) != data.userID){
     //座位和userid不对应，不应该发生此类错误
-    cb({seat:data.seat,talentList:[]});
+    cb({seat:data.seat,talentList:""});
     return;
   }
   var player = this.playerManager.getPlayerBySeat(data.seat);
   var strTalentList = data.talentList.split(",");
-  player.talentList = strTalentList.map(function(data){return +data;});
-
+  player.talentList = strTalentList.map(function(data){return Number(data);});
 
   //自己上报的响应
-  cb({seat:player.seat,talentList:player.talentList});
+  cb({seat:player.seat,talentList:player.talentList.join(",")});
 
   var allPlayer = this.playerManager.getAllPlayer();
   //向该玩家发送其他人的天赋列表 - 此消息必须有seat之后发送
@@ -437,40 +449,65 @@ Room.prototype.onRoomRemoved = function(type){
     }
 }
 
-// 客户端通知的游戏开始了
+// 客户端通知的游戏开始了 --- 此处需要修改优化，只有当房主点击开始按钮，且已经启动了游戏界面后才可以发动start，而不是点击就发
+// 所有用户均需要在启动完成后发送这个消息，通知服务端
 Room.prototype.onNotifyStartGame = function(data){
+
+    //这里需要判断是否是正常的开启，比如人离开了但是还是没有禁用开始按钮
+    if(this.ruleJson.playerNum != this.playerManager.getPlayerNum()) {
+      return;
+    }
+
     // 只有房主才能开启游戏
-    if(data.userID == this.owner && !data.isEnterRoomFinsh){
-      // 向所有人推送 start game
-      this.sendMsgToAll("room.roomHandler.notifyStartGame",{})
-      //此处需要启动定时器，超时，也认为收到startgame
-      //
-      for(var i = 0;i < this.ruleJson.playerNum;i++){
-        var cid = schedule.scheduleJob({start:Date.now()+2000}, function(data){
-          //
-          data.self.recStartGameNum++;
-          if(data.self.recStartGameNum == data.self.ruleJson.playerNum){
-            data.self.startGame();
-            data.self.recStartGameClock = [];
-            data.self.recStartGameNum = 0;
-          }
-
-        }, {self:this});
-
-        this.recStartGameClock.push(cid);
-      }
+    if(this.roomType == DEF.ROOM.ROOM_TYPE.ROOM_PLAZA || this.roomType == DEF.ROOM.ROOM_TYPE.ROOM_CLASSIC_PLAZA){
+      this.receiveStartGame(this.ruleJson.playerNum);
     }else{
-      this.delClock(this.recStartGameClock[this.recStartGameNum]);
-      
-      this.recStartGameNum++;
-      if(this.recStartGameNum == this.ruleJson.playerNum){
-        this.startGame();
-        this.recStartGameClock = [];
-        this.recStartGameNum = 0;
-      }
+        if(data.userID == this.owner/* && !data.isEnterRoomFinsh */){
+          this.notifyClientStartGame(this.owner);//房主的话就向其他玩家发送
+        }else{
+          this.receiveStartGame(this.ruleJson.playerNum);
+        }
     }
 }
 //---------------------------------游戏过程--------------------------------------------------------
+Room.prototype.receiveStartGame = function(total){
+    this.delClock(this.recStartGameClock[this.recStartGameNum]);
+    
+    this.recStartGameNum++;
+    if(this.recStartGameNum == total){
+      this.startGame();
+      this.recStartGameClock = [];
+      this.recStartGameNum = 0;
+    }
+}
+Room.prototype.notifyClientStartGame = function(owner = 0){
+  var timerNum = this.ruleJson.playerNum;
+  if(this.roomType == DEF.ROOM.ROOM_TYPE.ROOM_PLAZA || this.roomType == DEF.ROOM.ROOM_TYPE.ROOM_CLASSIC_PLAZA){
+    //向所有客户端发送启动游戏开始
+    this.sendMsgToAll("room.roomHandler.notifyStartGame",{});
+  }else{
+    // 此种情况属于房主主动触发，其已经向服务器发送过start game了，也就是其已经进入游戏界面，不需要再向其发送
+     this.sendMsgToOtherExceptUserID("room.roomHandler.notifyStartGame",owner,{});
+     timerNum = timerNum - 1;//减少一个房主的
+     this.recStartGameNum = this.recStartGameNum + 1;//已经收到一个
+  }
+
+  //此处需要启动定时器，超时，也认为收到startgame
+  for(var i = 0;i < timerNum;i++){
+    var cid = schedule.scheduleJob({start:Date.now()+2000}, function(data){
+      //
+      data.self.recStartGameNum++;
+      if(data.self.recStartGameNum == data.self.ruleJson.playerNum){
+        data.self.startGame();
+        data.self.recStartGameClock = [];
+        data.self.recStartGameNum = 0;
+      }
+
+    }, {self:this});
+
+    this.recStartGameClock.push(cid);
+  }
+}
 
 Room.prototype.ednGame = function(data,cb){
   this.state = DEF.ROOM.ROOM_GAME_STATE.ROOM_WAIT;
