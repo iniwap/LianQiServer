@@ -1,110 +1,10 @@
-/**
- * Module dependencies
-class chess{
-  health;
-  attack;
-  support;
-  absorb;
-
-  direction;
-  playerID;
-
-  x;
-  y;
-
-  // Array
-  skillList: [
-    // every skill contains
-    // int
-    healthChange, attackChange, absorbChange, 
-    // int
-    applyPosX, applyPosY, applyPosZ, 
-    // int
-    basePosX, basePosY, basePosZ,
-    // string
-    type
-  ] ...
-
-  // Array
-  buffList->[
-    // every buff contains
-    // int32
-    healthChange, attackChange, absorbChange, 
-    // string
-    type
-  ] ...
-};
-
-class gameState{
-  // int
-  UNINITIALIZED = -1,
-  READY = 0,
-  STARTED = 1,
-  ENDING = 2
-};
-
-class returnValue{
-  // boolean
-  success;
-  // used when failed operation
-  errorMsg;//errMsg
-  // --!in the future
-  // used if necessary
-  // userData;
-};
-
-// Conneat system
-// Must initialze the system before calling these interfaces
-function init()->[returnValue]
-
-function uninit()->[returnValue]
-
-// room
-// gameState ready
-
-// ruleString
-{
-  "playerNum": 2,
-  "gridlevel": 4,
-  "rule": "default",
-
-  //--! in the future 
-  "gameTime": "360"
-  ...
-}
-function addGame(roomID, ruleString)->[returnValue, [playerID1, playerID2..., playerIDNum]]
-
-function removeGame(roomID)->[returnValue]
-
-// total storaged game count in server
-function getGameNum()->[returnValue, gameNum]
-
-// gameState starting
-function startGame(roomID)->[returnValue]
-
-// gameState ending
-function endGame(roomID)->[returnValue, [chess0, chess1, ...]]
-
-function getGameState(roomID)->[returnValue, gameState]
-
-function getPlayerNow(roomID)->[returnValue, playerID]
-
-// game
-function endTurn(roomID, playerID)->[returnValue]
-
-function placeChess(roomID, playerID, x, y, direction)->[returnValue, [chess0, chess1, ...]]
-
-// --!in the future
-function chessMove(roomID, playerID, x, y, direction)->[returnValue, [chess0, chess1, ...]]
-
-// gameState ending
-function abandon(roomID, playerID)->[returnValue]
-
-
- */
+//
+//游戏过程管理
+//
 var UTILS = require('../util/utils');
 var DEF = require('../consts/consts');
-var lianQi = require('./GameLogic.node') //game logic
+var LianQi = require('../GameLogic/LianQi')
+var lianQi = new LianQi();
 
 var ENDING = 2;
 
@@ -120,7 +20,7 @@ var gSeatList = {};
       GAME_STEP_DICE:2,//掷骰子
       GAME_STEP_PLAY:3,//落子阶段
       GAME_STEP_MOVE_OR_PASS:4,
-      GAME_STEP_MOVE:5,//移动阶段
+      GAME_STEP_MOVE:5,//移动阶段 - 实际上没有该阶段，因为可以选择不move
       GAME_STEP_PASS:6,//回合结束阶段
       GAME_STEP_ABANDON:7,//投降阶段
       GAME_STEP_DRAW:8,//请和阶段
@@ -164,8 +64,10 @@ exp.onStartGame = function(app,data,cb){
 exp.onEndGame = function(app,data,cb){
   var ret = endGame(data.roomId,cb);
 
-  var endData = getCheckerboard(ret);
-  notifyGameState(getRetFlag(ret),DEF.GAME.NOTIFY_GAME_STATE.END,data.roomId,gSeatList[data.roomId].seatList,endData,app);
+  var endData = getChessboard(ret[1]);
+  //游戏逻辑只返回了棋盘数据
+  //结束的数据可能需要添加特殊数据，且只是在room使用处理出需要的数据，并不发给客户端
+  notifyGameState(getRetFlag(ret[0]),DEF.GAME.NOTIFY_GAME_STATE.END,data.roomId,gSeatList[data.roomId].seatList,endData,app);
 
   ////切换到END 此处没有意义
   //changeGameStep(data.roomId,DEF.GAME.GAME_STEP.GAME_STEP_END);
@@ -217,9 +119,9 @@ exp.onRelink = function(app,data,cb){
 
   var ret = getGame(data.roomId,cb);
 
-  var gameData = getCheckerboard(ret);
+  var gameData = getChessboard(ret[1]);
 
-  notifyRelinkGameState(getRetFlag(ret),
+  notifyRelinkGameState(getRetFlag(ret[0]),
     DEF.GAME.NOTIFY_GAME_STATE.RELINK,
     data.roomId,
     currentGame.currentSeat,
@@ -250,10 +152,9 @@ exp.onPlay = function(app,data,cb){
       return;
     }
   }
-
-  if(!!doPlayOrMove(DEF.GAME.NOTIFY_GAME_STATE.PLAY,data,cb,app)){
-
-      //更新禁手方向记录
+  var ret = doPlayOrMove(DEF.GAME.NOTIFY_GAME_STATE.PLAY,data,cb,app);
+  if(ret[0]){
+    //更新禁手方向记录
     if(gSeatList[data.roomId].banDirList[0] == DEF.GAME.GAME_DIRECT_TYPE.LIANQI_DIRECTION_TYPE_NONE){
       gSeatList[data.roomId].banDirList[0] = data.direction;
     }else if(gSeatList[data.roomId].banDirList[1] == DEF.GAME.GAME_DIRECT_TYPE.LIANQI_DIRECTION_TYPE_NONE){
@@ -273,7 +174,11 @@ exp.onPlay = function(app,data,cb){
       }
     }
 
-    changeGameStep(data.roomId,DEF.GAME.GAME_STEP.GAME_STEP_MOVE_OR_PASS);
+    if(ret[1]){
+      changeGameStep(data.roomId,DEF.GAME.GAME_STEP.GAME_STEP_MOVE_OR_PASS);//有可以移动的棋子，进入move-pass阶段
+    }else{
+      changeGameStep(data.roomId,DEF.GAME.GAME_STEP.GAME_STEP_PASS);//没有可以移动棋子，进入pass阶段
+    }
   }
 }
 exp.onPass = function(app,data,cb){
@@ -325,8 +230,13 @@ exp.onMove = function(app,data,cb){
     return;
   }
 
-  if(!!doPlayOrMove(DEF.GAME.NOTIFY_GAME_STATE.MOVE,data,cb,app)){
-    changeGameStep(data.roomId,DEF.GAME.GAME_STEP.GAME_STEP_PASS);
+  var ret = doPlayOrMove(DEF.GAME.NOTIFY_GAME_STATE.MOVE,data,cb,app)
+  if(ret[0]){
+    if(ret[1]){
+      changeGameStep(data.roomId,DEF.GAME.GAME_STEP.GAME_STEP_MOVE_OR_PASS);//仍有可以移动的棋子，进入move-pass阶段
+    }else{
+      changeGameStep(data.roomId,DEF.GAME.GAME_STEP.GAME_STEP_PASS);//没有可以移动棋子，进入pass阶段
+    }
   }
 }
 
@@ -395,16 +305,14 @@ var doOnPass = function(app,data,timeOut,isAbandon,cb){
   
   if(!timeOut && !isAbandon){
     var ret = getGame(data.roomId,function(){});
-    if(ret !== DEF.RET_ERROR){
+    if(ret[0]){
       var ruleJson = JSON.parse(gSeatList[data.roomId].rule);
       var tcnt = 37;
       if(Number(ruleJson.gridLevel) == 6){
         tcnt = 91;
       }
 
-      console.error("==============>length:",tcnt,ret.length);
-
-      if(ret.length >= tcnt){
+      if(ret[1].chesses.length >= tcnt){
         this.onEndGame(app,{roomId:data.roomId},function(flag){});
       }
     }
@@ -450,7 +358,7 @@ var getHasAbandon = function(roomId,currentTurn){
 
 var getRetFlag = function(ret){
 
-  if(ret !== DEF.RET_ERROR){
+  if(ret){
     return DEF.RET_SUCCESS;
   }
 
@@ -487,41 +395,32 @@ var doPlayOrMove = function(type,data,cb,app){
   if(type == DEF.GAME.NOTIFY_GAME_STATE.PLAY){
     ret = placeChess(data.roomId,currentTurn,data.x,data.y,data.direction,cb);
   }else{
-    ret = chessMove(data.roomId,currentTurn,data.x,data.y,data.direction,cb);
+    ret = chessMove(data.roomId,currentTurn,data.moveList,cb);//移动的话是一个可移动的棋子列表
   }
 
-  if(ret !== DEF.RET_ERROR){
-    //组装棋盘数据
-    var gameBord = getCheckerboard(ret);
-    var chessArray = [];
-    for(var i in gameBord){
-      if(gameBord[i]['x'] == data.x 
-        && gameBord[i]['y'] == data.y
-        && gameBord[i]['direction'] == data.direction
-        && gameBord[i]['playerID'] == currentTurn){
-          chessArray.push(gameBord[i]);
-          break;
-      }
-    }
-
+  if(ret[0]){
+    var ndata = {};
     //只发送当前落子，不再发送整个棋盘信息，没有意义
-    var ndata = {flag:DEF.GAME.GAME_OP_RESP_FLAG.SUCCESS,
-                        seat:data.seat,
-                        x:data.x,
-                        y:data.y,
-                        direction:data.direction,
-                        checkerBoard:chessArray,
-                        playerChessCnt:getPlayerChessCnt(data.roomId,gameBord)};
+    if(type == DEF.GAME.NOTIFY_GAME_STATE.PLAY){
+        ndata = {flag:DEF.GAME.GAME_OP_RESP_FLAG.SUCCESS,
+                  seat:data.seat,
+                  x:data.x,
+                  y:data.y,
+                  direction:data.direction};
+    }else{
+        ndata = {flag:DEF.GAME.GAME_OP_RESP_FLAG.SUCCESS,
+            seat:data.seat,
+            moveList : ret[3]};//注意这里可能不完全和发上来的movelist一致，所以这里采用游戏逻辑返回的
+    }
 
     // 响应自己落子
     cb(DEF.RET_SUCCESS,ndata);
     //向其他玩家发送落子结果
     notifyGameState(DEF.RET_SUCCESS,type,data.roomId,data.seat,ndata,app);
     
-   return true;
   }
 
-  return false;
+  return ret;
 }
 
 var checkIfIllegal = function(roomId,seat,cb){
@@ -565,64 +464,20 @@ var changeTurn = function(roomId){
 
   return currentGame.currentSeat;
 }
-var getPlayerChessCnt = function(roomId,gameBord){
-    var chessCntArray = [0,0,0,0];
-    var currentGame = gSeatList[roomId];
 
-    for(var i in gameBord){
-      chessCntArray[currentGame.seatList[gameBord[i]['playerID']].seat] += 1;
-    }
-
-    return chessCntArray;
-}
-
-var getCheckerboard = function(data){
+var getChessboard = function(data){
 
   if(data === DEF.RET_ERROR) return {};
   
   var chessArray = [];
   
-  for(var i in data){
+  //只取棋子的核心数据信息，对于需要细节的，请新增别的接口访问
+  for(var i in data.chesses){
     var chess = {};
-    chess['health'] = data[i].health;
-    chess['attack'] = data[i].attack;
-    chess['support'] = data[i].support;
-    chess['absorb'] = data[i].absorb;
     chess['direction'] = data[i].direction;
     chess['playerID'] = data[i].playerID;
-    chess['health'] = data[i].health;
     chess['x'] = data[i].x;
     chess['y'] = data[i].y;
-
-    var skillList = [];
-    for(s in data[i].skillList){
-      var skill = {};
-      
-      skill['healthChange'] = data[i].skillList[s].healthChange;
-      skill['attackChange'] = data[i].skillList[s].attackChange;
-      skill['absorbChange'] = data[i].skillList[s].absorbChange;
-      skill['applyPosX'] = data[i].skillList[s].applyPosX;
-      skill['applyPosY'] = data[i].skillList[s].applyPosY;
-      skill['applyPosZ'] = data[i].skillList[s].applyPosZ;
-      skill['basePosX'] = data[i].skillList[s].basePosX;
-      skill['basePosY'] = data[i].skillList[s].basePosY;
-      skill['basePosZ'] = data[i].skillList[s].basePosZ;
-      skill['type'] = data[i].skillList[s].type;
-
-      skillList.push(skill);
-    }
-    chess['skillList'] = skillList;
-
-    var buffList = [];
-    for(b in data[i].buffList){
-      var buff = {};
-      buff['healthChange'] = data[i].buffList[b].healthChange;
-      buff['attackChange'] = data[i].buffList[b].attackChange;
-      buff['absorbChange'] = data[i].buffList[b].absorbChange;
-      buff['type'] = data[i].buffList[b].type;
-      buffList.push(buff);
-    }
-    chess['buffList'] = buffList;
 
     chessArray.push(chess);
   }
@@ -641,11 +496,20 @@ var notifyRelinkGameState = function(flag,type,roomId,seat,userID,data,app) {
 }
 
 //---------------------------算法私有接口----------------------
+/*ruleString
+{
+  "playerNum": 2,
+  "gridlevel": 4,
+  "rule": "default",
+  //--! in the future 
+  "gameTime": "360"
+  ...
+}
+ */
 var init = function(cb){
-  
   var ret = lianQi.init();
 
-  if(!!ret[0].success){
+  if(ret[0]){
     cb(DEF.RET_SUCCESS);
     return DEF.RET_SUCCESS;
   }else{
@@ -657,7 +521,7 @@ var init = function(cb){
 var uninit = function(cb){
   var ret = lianQi.uninit();
 
-  if(!!ret[0].success){
+  if(ret[0]){
     cb(DEF.RET_SUCCESS);
     return DEF.RET_SUCCESS;
   }else{
@@ -671,12 +535,12 @@ var addGame = function(roomId,ruleString,cb){
 
   var ret = lianQi.addGame(roomId,ruleString);
 
-  if(ret[0].success){
+  if(ret[0]){
     cb(DEF.RET_SUCCESS);
-    return ret[1];
+    return true;
   }else{
     cb(DEF.RET_ERROR);
-    return DEF.RET_ERROR;
+    return false;
     //removeGame(data.roomId);似乎没有必要？？
   }
 };
@@ -687,9 +551,9 @@ var removeGame = function(roomId){
 
 var endGame = function(roomId,cb){
   var ret = lianQi.endGame(roomId);
-  if(ret[0].success){
+  if(ret[0]){
     cb(DEF.RET_SUCCESS);
-    return ret[1];
+    return ret;
   }else{
     console.error("对局结算失败，严重错误！！！");
     cb(DEF.RET_ERROR)
@@ -699,25 +563,19 @@ var endGame = function(roomId,cb){
 
 var getGame = function(roomId,cb){
   var ret = lianQi.getGame(roomId);
-  if(ret[0].success){
+  if(ret[0]){
     cb(DEF.RET_SUCCESS);
-    return ret[1];
+    return ret;
   }else{
     cb(DEF.RET_ERROR)
     return DEF.RET_ERROR;
   }
 };
 
-//当前所有对局数
-var getGameNum = function(cb){
-  return lianQi.getGameNum();
-};
-
 //开始游戏
 var startGame = function(roomId,cb){
-  
   var ret = lianQi.startGame(roomId);
-  if(ret[0].success){
+  if(ret[0]){
     cb(DEF.RET_SUCCESS);
     return DEF.RET_SUCCESS;
   }else{
@@ -726,60 +584,29 @@ var startGame = function(roomId,cb){
   }
 };
 
-//获得对局状态
-var getGameState = function(roomId,cb){
-  return lianQi.getGameState();
-};
-
-//当前执子方
-var getPlayerNow = function(roomId,cb){
-  return lianQi.getPlayerNow(roomId);
-};
-
 //结束执子
 var endTurn = function(roomId,playerId,cb){
   return lianQi.endTurn(roomId,playerId);
 };
 
-//落子
+//落子[是否成功，是否可以移动，失败原因信息]
 var placeChess = function(roomId, playerId, x, y, direction,cb){
 
   var ret =  lianQi.placeChess(roomId, playerId, x, y, direction);
 
-  if(ret[0].success){
-    return ret[1];
-  }else{
-
+  if(!ret[0]){
     cb(DEF.RET_ERROR,{flag:DEF.GAME.GAME_OP_RESP_FLAG.ILLEGAL});
-
-    return DEF.RET_ERROR;
   }
+
+  return ret;
 };
 
-//移动
-var chessMove = function(roomId, playerId, x, y, direction,cb){
-  var ret = lianQi.chessMove(roomId, playerId, x, y, direction);
-
-  if(ret[0].success){
-    return ret[1];
-  }else{
+//移动[是否成功，是否可以继续移动，失败原因信息，moveList]
+var chessMove = function(roomId, playerId, moveList,cb){
+  var ret = lianQi.chessMove(roomId, playerId,moveList);
+  if(!ret[0]){
     cb(DEF.RET_ERROR,{flag:DEF.GAME.GAME_OP_RESP_FLAG.ILLEGAL});
-    return DEF.RET_ERROR;
   }
-};
 
-//投降
-var abandon = function(roomId, playerId,cb){
-  var ret = lianQi.abandon(roomId, playerId);
-  if(ret[0].success){
-    cb(DEF.RET_SUCCESS,{flag:DEF.GAME.GAME_OP_RESP_FLAG.SUCCESS});
-    return DEF.RET_SUCCESS;
-  }else{
-    cb(DEF.RET_ERROR,{flag:DEF.GAME.GAME_OP_RESP_FLAG.ILLEGAL});
-    return DEF.RET_ERROR;
-  }
-};
-
-var canMove = function(roomId,cb){
-  return false;
+  return ret;
 };
