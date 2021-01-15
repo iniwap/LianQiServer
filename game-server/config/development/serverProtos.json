@@ -1,33 +1,9 @@
 {
   	"message Chess" : {
-		"optional int32 health" : 1,
-		"optional int32 attack" : 2,
-		"optional int32 support" : 3,
-		"optional int32 absorb" : 4,
-		"optional int32 direction" : 5,
-		"optional uInt32 playerID" : 6,
-		"optional int32 x" : 7,
-		"optional int32 y" : 8,
-		"repeated Skill skillList" : 9,
-	    "message Skill" : {
-	        "optional int32 healthChange" : 1,
-	        "optional int32 attackChange" : 2,
-	        "optional int32 absorbChange" : 3,
-	        "optional int32 applyPosX" : 4,
-	        "optional int32 applyPosY" : 5,
-	        "optional int32 applyPosZ" : 6,
-	        "optional int32 basePosX" : 7,
-	        "optional int32 basePosY" : 8,
-	        "optional int32 basePosZ" : 9,
-	        "optional string type" : 10
-	  	},
-		"repeated Buff buffList" : 10,
-	    "message Buff" : {
-	        "optional int32 healthChange" : 1,
-	        "optional int32 attackChange" : 2,
-	        "optional int32 absorbChange" : 3,
-	        "optional string type" : 4
-	  	}
+		"optional int32 direction" : 1,
+		"optional uInt32 playerID" : 2,
+		"optional int32 x" : 3,
+		"optional int32 y" : 4
 	},
 	"connector.entryHandler.reqLogin":{
 		"required int32 flag" : 1,
@@ -291,39 +267,31 @@
 	},
 	"game.lianQiHandler.lianQI":{
 		"required uInt32 turn" : 1,
-      	"repeated Chess checkerBoard" : 2
+      	"repeated Chess chessBoard" : 2
 	},
 	"game.lianQiHandler.reqPlay":{
 		"required int32 flag" : 1,
 		"optional uInt32 seat" : 2,
 		"optional int32 x" : 3,
 		"optional int32 y" : 4,
-		"optional int32 direction" : 5,
-      	"repeated Chess checkerBoard" : 6
+		"optional int32 direction" : 5
 	},
 	"game.lianQiHandler.lianQiPlay":{
 		"required int32 flag" : 1,
 		"optional uInt32 seat" : 2,
 		"optional int32 x" : 3,
 		"optional int32 y" : 4,
-		"optional int32 direction" : 5,
-      	"repeated Chess checkerBoard" : 6
+		"optional int32 direction" : 5
 	},
 	"game.lianQiHandler.reqMove":{
 		"required int32 flag" : 1,
 		"optional uInt32 seat" : 2,
-		"optional int32 x" : 3,
-		"optional int32 y" : 4,
-		"optional int32 direction" : 5,
-      	"repeated Chess checkerBoard" : 6
+		"repeated Chess moveList" : 3
 	},
 	"game.lianQiHandler.lianQiMove":{
 		"required int32 flag" : 1,
 		"optional int32 seat" : 2,
-		"optional int32 x" : 3,
-		"optional int32 y" : 4,
-		"optional int32 direction" : 5,
-      	"repeated Chess checkerBoard" : 6
+		"repeated Chess moveList" : 3
 	},
 	"game.lianQiHandler.lianQiResult":{
 		"repeated GameResult result" : 1,
@@ -336,7 +304,6 @@
 			"required uInt32 hasAbandon" : 6
 	    },
 		"repeated uInt32 type" : 2,
-		"required uInt32 poolGold" : 3,
-      	"repeated Chess checkerBoard" : 4
+		"required uInt32 poolGold" : 3
 	}
 }
