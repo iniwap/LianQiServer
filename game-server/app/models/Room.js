@@ -20,6 +20,7 @@ function Room(isAutoCreate,roomType,roomId,roomData){
   this.clockID = null;//倒计时定时器id
   this.waitPassTime = 0;//倒计时
   this.round = 1;//当前回合数，用来实现 有限制回合的场
+  this.currentGameStep = DEF.GAME.GAME_STEP.GAME_STEP_NONE;
 
   this.roomType  = roomType;
   this.roomLevel = roomData.roomLevel;//场id 对应于下面三个参数
@@ -529,40 +530,60 @@ Room.prototype.startGame = function(){
 }
 
 //游戏过程数据通知
+/*
+      GAME_STEP_NONE:0,//空状态
+      GAME_STEP_START:1,//对局开始
+      GAME_STEP_DICE:2,//掷骰子
+      GAME_STEP_PLAY:3,//落子阶段
+      GAME_STEP_MOVE_OR_PASS:4,
+      GAME_STEP_MOVE:5,//移动阶段
+      GAME_STEP_PASS:6,//回合结束阶段
+      GAME_STEP_ABANDON:7,//投降阶段
+      GAME_STEP_DRAW:8,//请和阶段
+      GAME_STEP_END:9//结束
+ */
 Room.prototype.notifyGameState = function(data){
   var end = false;
   switch(data.type){
     case DEF.GAME.NOTIFY_GAME_STATE.START:
+      this.currentGameStep = DEF.GAME.GAME_STEP.GAME_STEP_START;
       this.notifyStartGame(data.data);
       break;
     case DEF.GAME.NOTIFY_GAME_STATE.PLAY:
       this.notifyPlay(data.seat,data.data);
+      this.currentGameStep = DEF.GAME.GAME_STEP.GAME_STEP_PLAY;
       break;
     case DEF.GAME.NOTIFY_GAME_STATE.MOVE:
       this.notifyMove(data.seat,data.data);
+      this.currentGameStep = DEF.GAME.GAME_STEP.GAME_STEP_MOVE_OR_PASS;
       break;
     case DEF.GAME.NOTIFY_GAME_STATE.DRAW:
       this.notifyDraw(data.seat,data.data);
+      this.currentGameStep = DEF.GAME.GAME_STEP.GAME_STEP_DRAW;
       break;
     case DEF.GAME.NOTIFY_GAME_STATE.PASS:
       this.notifyPass(data.seat,data.data);
+      this.currentGameStep = DEF.GAME.GAME_STEP.GAME_STEP_PASS;
       break;
     case DEF.GAME.NOTIFY_GAME_STATE.ABANDON:
       this.notifyAbandon(data.seat,data.data);
+      this.currentGameStep = DEF.GAME.GAME_STEP.GAME_STEP_ABANDON;
       break;
     case DEF.GAME.NOTIFY_GAME_STATE.END:
       this.notifyEND(data.seat,data.data);
+      this.currentGameStep = DEF.GAME.GAME_STEP.GAME_STEP_END;
       end = true;
       break;
     case DEF.GAME.NOTIFY_GAME_STATE.RELINK:
       this.notifyRelink(data.seat,data.userID,data.data,data.banDirList);
+      this.currentGameStep = DEF.GAME.GAME_STEP.GAME_STEP_START;
       break;
   }
   return end;
 }
 Room.prototype.notifyRelink = function(seat,userID,data,banDirList){
     //直接发送当前棋盘数据,需要从游戏请求  
-    this.sendMsgToUserID("game.lianQiHandler.lianQI",userID,{turn:seat,checkerBoard:data});
+    this.sendMsgToUserID("game.lianQiHandler.lianQI",userID,{turn:seat,chessBoard:data});
     
     //发送当前手以及禁用方向
     this.sendMsgToUserID("game.lianQiHandler.lianQITurn",userID,
@@ -761,7 +782,7 @@ Room.prototype.notifyEND = function(seatList,data){
   //根据输赢排序
   result.sort(function(playerA,playerB){return playerA.score < playerB.score});
 
-  this.sendMsgToAll("game.lianQiHandler.lianQiResult",{poolGold:poolGold,checkerBoard:[],result:result,type:[0,1,0,0]});
+  this.sendMsgToAll("game.lianQiHandler.lianQiResult",{poolGold:poolGold,result:result,type:[0,1,0,0]});
 
   //或许可以启定时器，等待用户几秒钟，如果没有准备，则自动踢出到大厅
   //也可以直接踢出到大厅，用户自行离开，而不是直接退出
@@ -871,8 +892,11 @@ Room.prototype.stepClock = function(step,seat,maxTime){
     return;
   }
 
+  this.sendMsgToAll("room.roomHandler.clock",
+      {seat : seat,leftTime : maxTime - this.waitPassTime,step : Number(this.currentGameStep)});
+
   this.clockID = schedule.scheduleJob({start:Date.now()+1000, period:1000, count: maxTime}, function(data){
-    
+
     if(data.self.waitPassTime - data.MAX > 0) 
     {
       console.warn("定时器出错超过的错误，一定是哪里写错了！");
@@ -880,6 +904,9 @@ Room.prototype.stepClock = function(step,seat,maxTime){
     }
     data.self.waitPassTime += 1;
     
+    data.self.sendMsgToAll("room.roomHandler.clock",
+      {seat : data.seat,leftTime : data.MAX - data.self.waitPassTime,step : Number(data.self.currentGameStep)});
+        
     if(data.self.waitPassTime - data.MAX == 0){
       //切换下棋方
       // 这里好像两边都要pass-或者直接通知游戏逻辑pass，最简单
